@@ -11,6 +11,7 @@ cgroup:
 
 .PHONY: docker
 docker:
-	sudo su -c "$(GO_BIN) run ./cmd/mydocker/ run -ti /bin/ls"
+	#  stress --vm-bytes 200m --vm-keep -m 1
+	sudo su -c "$(GO_BIN) run ./cmd/mydocker/ run -ti -m 100m sh"
 
 

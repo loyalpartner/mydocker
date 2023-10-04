@@ -21,6 +21,7 @@ func main() {
 
 	app.Before = func(ctx *cli.Context) error {
 		log.SetFormatter(&log.JSONFormatter{})
+		log.SetReportCaller(true)
 
 		log.SetOutput(os.Stdout)
 		return nil

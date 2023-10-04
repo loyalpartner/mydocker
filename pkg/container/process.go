@@ -4,12 +4,18 @@ import (
 	"os"
 	"os/exec"
 	sc "syscall"
+
+	"github.com/sirupsen/logrus"
 )
 
-func NewParentProcess(tty bool, command string) *exec.Cmd {
-	args := []string{"init", command}
-	cmd := exec.Command("/proc/self/exe", args...)
+func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		logrus.Errorf("New pipe error %v", err)
+		return nil, nil
+	}
 
+	cmd := exec.Command("/proc/self/exe", "init")
 	cmd.SysProcAttr = &sc.SysProcAttr{
 		Cloneflags: sc.CLONE_NEWUTS |
 			sc.CLONE_NEWNS |
@@ -23,6 +29,6 @@ func NewParentProcess(tty bool, command string) *exec.Cmd {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	}
-
-	return cmd
+	cmd.ExtraFiles = []*os.File{reader}
+	return cmd, writer
 }
