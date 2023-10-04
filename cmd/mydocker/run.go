@@ -26,10 +26,10 @@ func Run(tty bool, args []string, res *subsystems.ResourceConfig) {
 	cm.Apply(parent.Process.Pid)
 
 	sendInitCommand(args, writer)
-	if err := parent.Wait(); err != nil {
-		log.Error(err)
-	}
+	parent.Wait()
 
+	root, mnt := "/home/charlselee59", "/home/charlselee59/mnt"
+	container.DeleteWorkspace(root, mnt)
 }
 
 func sendInitCommand(args []string, writer *os.File) {

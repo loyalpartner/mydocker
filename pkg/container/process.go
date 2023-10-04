@@ -24,7 +24,10 @@ func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
 			sc.CLONE_NEWPID,
 	}
 	cmd.ExtraFiles = []*os.File{reader}
-	cmd.Dir = "/home/charlselee59/busybox"
+	root, mnt := "/home/charlselee59", "/home/charlselee59/mnt"
+	// root, mnt := "/root", "/root/mnt"
+	NewWorkspace(root, mnt)
+	cmd.Dir = "/root/busybox"
 
 	if tty {
 		cmd.Stdin = os.Stdin
