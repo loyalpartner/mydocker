@@ -23,12 +23,13 @@ func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
 			sc.CLONE_NEWNET |
 			sc.CLONE_NEWPID,
 	}
+	cmd.ExtraFiles = []*os.File{reader}
+	cmd.Dir = "/home/charlselee59/busybox"
 
 	if tty {
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	}
-	cmd.ExtraFiles = []*os.File{reader}
 	return cmd, writer
 }

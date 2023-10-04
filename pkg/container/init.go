@@ -5,8 +5,10 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 	"syscall"
+	sc "syscall"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -26,7 +28,7 @@ func RunContainerInitProcess() error {
 
 	log.Infof("Find path %s", path)
 
-	if err := syscall.Exec(path, args, os.Environ()); err != nil {
+	if err := sc.Exec(path, args, os.Environ()); err != nil {
 		log.Errorf(err.Error())
 	}
 
@@ -51,12 +53,37 @@ func setupMount() {
 	}
 
 	log.Infof("Current location is %s", pwd)
+	pivotRoot(pwd)
 
-	// TODO: pivoRoot
+	defaultMountFlags := sc.MS_NOEXEC | sc.MS_NOSUID | sc.MS_NODEV
+	sc.Mount("proc", "/proc", "proc", uintptr(defaultMountFlags), "")
 
-	defaultMountFlags := syscall.MS_NOEXEC | syscall.MS_NOSUID | syscall.MS_NODEV
-	syscall.Mount("proc", "/proc", "proc", uintptr(defaultMountFlags), "")
+	sc.Mount("tmpfs", "/dev", "tmpfs", sc.MS_NOSUID|sc.MS_STRICTATIME, "mode=755")
 
-	syscall.Mount("tmpfs", "/dev", "tmpfs", syscall.MS_NOSUID|syscall.MS_STRICTATIME, "mode=755")
+}
 
+func pivotRoot(root string) error {
+	err := sc.Mount(root, root, "bind", sc.MS_BIND|sc.MS_REC, "")
+	if err != nil {
+		return fmt.Errorf("Mount rootfs to itself error: %v", err)
+	}
+
+	pivotDir := path.Join(root, ".pivot_root")
+	if err := os.Mkdir(pivotDir, 0777); err != nil {
+		return err
+	}
+
+	if err := sc.PivotRoot(root, pivotDir); err != nil {
+		return fmt.Errorf("pivot_root %v", err)
+	}
+
+	if err := syscall.Chdir("/"); err != nil {
+		return fmt.Errorf("chdir / %v", err)
+	}
+
+	if err := sc.Unmount(pivotDir, sc.MNT_DETACH); err != nil {
+		return fmt.Errorf("unmount pivot_root dir %v", err)
+	}
+
+	return os.Remove(pivotDir)
 }
