@@ -53,7 +53,9 @@ func setupMount() {
 	}
 
 	log.Infof("Current location is %s", pwd)
-	pivotRoot(pwd)
+	if err := pivotRoot(pwd); err != nil {
+		log.Errorf("pivotRoot %v", err)
+	}
 
 	defaultMountFlags := sc.MS_NOEXEC | sc.MS_NOSUID | sc.MS_NODEV
 	sc.Mount("proc", "/proc", "proc", uintptr(defaultMountFlags), "")
@@ -81,9 +83,10 @@ func pivotRoot(root string) error {
 		return fmt.Errorf("chdir / %v", err)
 	}
 
+	pivotDir = path.Join("/", ".pivot_root")
 	if err := sc.Unmount(pivotDir, sc.MNT_DETACH); err != nil {
 		return fmt.Errorf("unmount pivot_root dir %v", err)
 	}
 
-	return os.Remove(pivotDir)
+	return os.RemoveAll(pivotDir)
 }
