@@ -28,7 +28,7 @@ func Run(tty bool, args []string, res *subsystems.ResourceConfig) {
 	sendInitCommand(args, writer)
 	parent.Wait()
 
-	root, mnt := "/home/charlselee59", "/home/charlselee59/mnt"
+	root, mnt := "/root", "/root/merged"
 	container.DeleteWorkspace(root, mnt)
 }
 

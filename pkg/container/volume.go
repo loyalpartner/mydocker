@@ -1,6 +1,7 @@
 package container
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path"
@@ -36,9 +37,12 @@ func CreateReadonlyLayer(root string) {
 }
 
 func CreateWritableLayer(root string) {
-	path := path.Join(root, "writeLayer/")
-	if err := os.Mkdir(path, 0777); err != nil {
-		log.Errorf("Mkdir dir %s error. %v", path, err)
+	dirs := []string{"work", "writableLayer"}
+	for _, d := range dirs {
+		p := path.Join(root, d)
+		if err := os.Mkdir(p, 0777); err != nil {
+			log.Errorf("Mkdir dir %s error. %v", p, err)
+		}
 	}
 }
 
@@ -47,10 +51,11 @@ func CreateMountPoint(root string, mnt string) {
 		log.Errorf("Mkdir dir %s error. %v", mnt, err)
 	}
 
-	// dirs := "dirs=" + root + "writeLayer:" + root + "busybox"
-	// cmd := exec.Command("mount", "-t", "aufs", "-o", dirs, "none", mnt)
-	// TODO: use btrfs filesystem
-	cmd := exec.Command("mount", "-t", "tmpfs", "swap", mnt)
+	// mount -t overlay overlay -o lowerdir=/root/busybox,upperdir=/root/writableLayer,workdir=/root/work /root/merged
+	lower, upper, work := path.Join(root, "busybox"),
+		path.Join(root, "writableLayer"), path.Join(root, "work")
+	options := fmt.Sprintf("lowerdir=%s,upperdir=%s,workdir=%s", lower, upper, work)
+	cmd := exec.Command("mount", "-t", "overlay", "overlay", "-o", options, mnt)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -87,8 +92,11 @@ func DeleteMountPoint(root string, mnt string) {
 }
 
 func DeleteWritebaleLayer(root string) {
-	path := path.Join(root, "writeLayer")
-	if err := os.RemoveAll(path); err != nil {
-		log.Errorf("Remove dir %s error %v", path, err)
+	dirs := []string{"work", "writableLayer"}
+	for _, d := range dirs {
+		p := path.Join(root, d)
+		if err := os.RemoveAll(p); err != nil {
+			log.Errorf("Remove dir %s error %v", p, err)
+		}
 	}
 }
