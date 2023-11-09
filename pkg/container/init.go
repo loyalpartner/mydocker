@@ -65,7 +65,12 @@ func setupMount() {
 }
 
 func pivotRoot(root string) error {
-	err := sc.Mount(root, root, "bind", sc.MS_BIND|sc.MS_REC, "")
+	err := sc.Mount("", "/", "bind", syscall.MS_PRIVATE|syscall.MS_REC, "")
+	if err != nil {
+		return fmt.Errorf("Mount rootfs to itself error: %v", err)
+	}
+
+	err = sc.Mount(root, root, "bind", sc.MS_BIND|sc.MS_REC, "")
 	if err != nil {
 		return fmt.Errorf("Mount rootfs to itself error: %v", err)
 	}
